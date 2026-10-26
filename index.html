@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Page Ranking and Convergence Analyzer | Linear Algebra Mini Project</title>
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- KaTeX for LaTeX Math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body);"></script>
+
+  <!-- Chart.js for Convergence & Trajectory Graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-title-group">
+        <span class="project-tag">Topic 53 &bull; Modules 1, 2, 3</span>
+        <h1>Web Page Ranking and Convergence Analyzer</h1>
+        <p class="header-subtitle">
+          Sequential Computational Process: Web Links &rarr; Adjacency Matrix &rarr; Matrix Normalization &rarr; Initial Ranking Vector &rarr; Repeated Transformation &rarr; Convergence Analysis &rarr; Final Ranking &rarr; Eigenvector Verification
+        </p>
+      </div>
+      <div class="header-badges">
+        <span class="concept-badge">Matrices</span>
+        <span class="concept-badge">Vectors</span>
+        <span class="concept-badge">Linear Transformations</span>
+        <span class="concept-badge">Markov Chains</span>
+        <span class="concept-badge">Eigenvalues &amp; Eigenvectors</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs-wrapper">
+    <div class="nav-tabs-inner">
+      <button class="nav-tab active" data-target="tabInteractive">Interactive Analyzer &amp; Visualizer</button>
+      <button class="nav-tab" data-target="tabMathTheory">Mathematical Formulation &amp; Concepts</button>
+      <button class="nav-tab" data-target="tabVivaGuide">Viva Voce &amp; Presentation Q&amp;A</button>
+      <button class="nav-tab" data-target="tabPythonCli">Python Script &amp; Terminal Demo</button>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="main-container">
+
+    <!-- Sequential Mathematical Process Flow Bar -->
+    <div class="pipeline-bar">
+      <div class="pipeline-step"><span class="step-number">1</span> Directed Web Graph</div>
+      <span class="pipeline-arrow">&rarr;</span>
+      <div class="pipeline-step"><span class="step-number">2</span> Adjacency Matrix (A)</div>
+      <span class="pipeline-arrow">&rarr;</span>
+      <div class="pipeline-step"><span class="step-number">3</span> Normalized Matrix (M, G)</div>
+      <span class="pipeline-arrow">&rarr;</span>
+      <div class="pipeline-step"><span class="step-number">4</span> Initial Vector (v&sup0;)</div>
+      <span class="pipeline-arrow">&rarr;</span>
+      <div class="pipeline-step"><span class="step-number">5</span> Power Iteration</div>
+      <span class="pipeline-arrow">&rarr;</span>
+      <div class="pipeline-step"><span class="step-number">6</span> Convergence Analysis</div>
+      <span class="pipeline-arrow">&rarr;</span>
+      <div class="pipeline-step"><span class="step-number">7</span> Final Ranking</div>
+      <span class="pipeline-arrow">&rarr;</span>
+      <div class="pipeline-step"><span class="step-number">8</span> Eigenvector Verification</div>
+    </div>
+
+    <!-- TAB 1: INTERACTIVE ANALYZER -->
+    <div id="tabInteractive" class="tab-content active">
+
+      <!-- Key Performance Metrics Summary Bar -->
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-label">Total Web Pages (n)</div>
+          <div class="metric-value" id="statTotalPages">4</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Hyperlinks</div>
+          <div class="metric-value" id="statTotalLinks">6</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Dangling Pages (Dead Ends)</div>
+          <div class="metric-value" id="statDanglingNodes" style="font-size: 1.1rem; color: #d97706;">None</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Iterations to Converge</div>
+          <div class="metric-value" id="statIterationsToConverge" style="color: var(--primary);">27</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Second Eigenvalue |&lambda;&sub2;|</div>
+          <div class="metric-value" id="statLambda2">0.5214</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Spectral Gap (1 - |&lambda;&sub2;|)</div>
+          <div class="metric-value" id="statSpectralGap" style="color: var(--success);">0.4786</div>
+        </div>
+      </div>
+
+      <!-- Controls & Network Graph Row -->
+      <div class="dashboard-grid">
+        
+        <!-- Left Column: Graph Visualizer & Topology Presets -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Stage 1: Web Topology &amp; Interactive Graph</h2>
+              <p class="card-subtitle">Drag nodes, select network presets, or click canvas to add nodes &amp; links.</p>
+            </div>
+            <button class="btn" id="btnArrangeCircle">Rearrange Circle</button>
+          </div>
+
+          <!-- Network Preset Selection -->
+          <div style="margin-bottom: 0.85rem;">
+            <label style="font-size: 0.82rem; font-weight: 600; color: var(--slate-600); display: block; margin-bottom: 0.3rem;">Choose Network Preset:</label>
+            <select id="presetSelect" style="width: 100%;">
+              <!-- Populated by JS -->
+            </select>
+            <p id="presetDescription" style="font-size: 0.8rem; color: var(--slate-600); margin-top: 0.35rem; font-style: italic;"></p>
+          </div>
+
+          <!-- Canvas Interactive Toolbar -->
+          <div style="display: flex; gap: 0.4rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+            <button class="btn tool-btn active" data-mode="drag">Move / Select</button>
+            <button class="btn tool-btn" data-mode="addNode">+ Add Node</button>
+            <button class="btn tool-btn" data-mode="addLink">+ Add Link (From &rarr; To)</button>
+            <button class="btn tool-btn" data-mode="delete">&times; Delete Node</button>
+          </div>
+
+          <!-- Canvas -->
+          <div class="canvas-container">
+            <canvas id="networkCanvas" height="420"></canvas>
+          </div>
+
+          <!-- Simulation Parameters Toolbar -->
+          <div class="controls-bar" style="margin-top: 1rem; margin-bottom: 0;">
+            <div class="control-group">
+              <label for="dampingSlider">Damping Factor (d):</label>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="range" id="dampingSlider" min="0" max="1" step="0.01" value="0.85" style="width: 110px;">
+                <input type="number" id="dampingInput" min="0" max="1" step="0.01" value="0.85" style="width: 65px;">
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label for="toleranceSelect">Convergence Tolerance (&epsilon;):</label>
+              <select id="toleranceSelect">
+                <option value="1e-4">10⁻⁴ (Fast)</option>
+                <option value="1e-7" selected>10⁻⁷ (Standard)</option>
+                <option value="1e-10">10⁻¹⁰ (High Precision)</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label for="initVectorSelect">Initial Ranking Vector (v&sup0;):</label>
+              <select id="initVectorSelect">
+                <option value="uniform" selected>Uniform (1/n each)</option>
+                <option value="biased">Biased toward P1</option>
+                <option value="custom">Custom Values</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label for="maxIterInput">Max Iterations:</label>
+              <input type="number" id="maxIterInput" value="100" min="10" max="500" style="width: 70px;">
+            </div>
+          </div>
+
+          <!-- Custom vector input panel (hidden by default) -->
+          <div id="customVectorContainer" style="display: none; margin-top: 0.75rem; padding: 0.75rem; background: #f1f5f9; border-radius: 6px;">
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--slate-700);">Set Custom Values for v&sup0; (will be auto-normalized to sum to 1):</label>
+            <div id="customVectorInputs" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem;"></div>
+          </div>
+        </div>
+
+        <!-- Right Column: Final Ranking & Eigenvector Verification -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Stage 7 &amp; 8: Final Ranking &amp; Eigenvector Verification</h2>
+              <p class="card-subtitle">Steady-state probabilities and Perron-Frobenius nullspace confirmation.</p>
+            </div>
+            <span class="status-badge badge-success" id="eigenStatusBadge">VERIFIED MATCH</span>
+          </div>
+
+          <!-- Final Ranking Table -->
+          <h3 style="font-size: 0.95rem; font-weight: 600; color: var(--slate-700); margin-bottom: 0.5rem;">
+            Final Steady-State Page Ranks (Power Method)
+          </h3>
+          <div class="data-table-wrapper" style="max-height: 200px; margin-bottom: 1.25rem;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Page</th>
+                  <th>Score (v*)</th>
+                  <th>Probability Share</th>
+                  <th>In-Links</th>
+                  <th>Out-Links</th>
+                </tr>
+              </thead>
+              <tbody id="finalRankingTableBody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Mathematical Eigenvector Verification -->
+          <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 8px; padding: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <h3 style="font-size: 0.95rem; font-weight: 600; color: var(--slate-800);">
+                Analytical Eigenvector Verification: (G - I)v = 0 with &Sigma; v_i = 1
+              </h3>
+            </div>
+            <p style="font-size: 0.83rem; color: var(--slate-600); margin-bottom: 0.75rem;">
+              Solves the exact stationary linear system using Gaussian Elimination with partial pivoting and verifies the Perron-Frobenius Theorem for stochastic matrices.
+            </p>
+            
+            <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem; font-size: 0.85rem;">
+              <div>Residual Norm ||Gv* - v*||&sub2;: <strong class="code-val" id="eigenResidualVal">0.00e+00</strong></div>
+              <div>Difference ||v_power - v_eigen||&sub2;: <strong class="code-val" id="eigenPowerDiffVal">0.00e+00</strong></div>
+            </div>
+
+            <div class="data-table-wrapper" style="max-height: 140px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Page</th>
+                    <th>Power Iteration v*</th>
+                    <th>Eigenvector v_exact</th>
+                    <th>Absolute Delta |&Delta;|</th>
+                  </tr>
+                </thead>
+                <tbody id="eigenComparisonTableBody">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Action Export Buttons -->
+          <div style="display: flex; gap: 0.5rem; margin-top: 1.25rem; flex-wrap: wrap;">
+            <button class="btn" id="btnExportCsv">Export CSV (Iteration History)</button>
+            <button class="btn" id="btnExportJson">Export JSON (Full Model)</button>
+            <button class="btn btn-primary" id="btnPrintReport">Print / Save PDF Report</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Stage 2, 3, 4: Matrices and Initial Vector Row -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Stages 2, 3 &amp; 4: Mathematical Matrices &amp; Normalization</h2>
+            <p class="card-subtitle">
+              Adjacency matrix A &rarr; Column-stochastic transition matrix M &rarr; Damped Google matrix G &rarr; Initial ranking vector v&sup0;.
+            </p>
+          </div>
+          <span style="font-size: 0.8rem; color: var(--slate-600);" id="outDegreesPill"></span>
+        </div>
+
+        <div class="matrix-grid">
+          <!-- Adjacency Matrix A -->
+          <div class="matrix-card">
+            <div class="matrix-card-title">
+              Stage 2: Adjacency / Link Matrix (A)
+              <span style="font-weight: normal; color: var(--slate-500);">(A_ij = 1 if j &rarr; i)</span>
+            </div>
+            <div id="matrixAdjacency"></div>
+          </div>
+
+          <!-- Normalized Transition Matrix M -->
+          <div class="matrix-card">
+            <div class="matrix-card-title">
+              Stage 3a: Stochastic Transition Matrix (M)
+              <span style="font-weight: normal; color: var(--slate-500);">(Columns sum to 1)</span>
+            </div>
+            <div id="matrixTransition"></div>
+          </div>
+
+          <!-- Damped Google Matrix G -->
+          <div class="matrix-card">
+            <div class="matrix-card-title">
+              Stage 3b: Google Matrix (G = d&middot;M + (1-d)/n&middot;E)
+              <span style="font-weight: normal; color: var(--slate-500);">(d = 0.85)</span>
+            </div>
+            <div id="matrixGoogle"></div>
+          </div>
+        </div>
+
+        <!-- Initial Vector v0 -->
+        <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--slate-200);">
+          <div style="font-size: 0.85rem; font-weight: 600; color: var(--slate-700);">
+            Stage 4: Initial Ranking Vector (v&sup0;), &Sigma; v&sup0;_i = 1:
+          </div>
+          <div id="initialVectorDisplay"></div>
+        </div>
+      </div>
+
+      <!-- Stage 5 & 6: Power Iteration Table & Convergence Charts -->
+      <div class="dashboard-grid">
+        
+        <!-- Power Iteration Step-by-Step Table -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Stage 5: Repeated Transformation &amp; Power Iteration</h2>
+              <p class="card-subtitle">v^(k+1) = G &middot; v^(k) computed sequentially at each step.</p>
+            </div>
+            <!-- Stepper controls -->
+            <div style="display: flex; gap: 0.3rem;">
+              <button class="btn" id="btnResetIteration">Reset</button>
+              <button class="btn" id="btnStepNext">Step &rarr;</button>
+              <button class="btn btn-primary" id="btnPlayAnimation">Play Animation</button>
+            </div>
+          </div>
+
+          <div style="font-size: 0.82rem; color: var(--slate-600); margin-bottom: 0.5rem;" id="currentStepDisplay">
+            Ready to inspect step-by-step state vector progression.
+          </div>
+
+          <div class="data-table-wrapper" style="max-height: 380px;">
+            <table class="data-table">
+              <thead>
+                <tr id="iterationTableHeadRow">
+                  <th>Iteration (k)</th>
+                  <!-- Columns generated dynamically -->
+                  <th>||v^(k) - v^(k-1)||_2</th>
+                  <th>L1 Norm Diff</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="iterationTableBody">
+                <!-- Iteration rows populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Convergence & Trajectory Charts -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Stage 6: Convergence Analysis &amp; Trajectories</h2>
+              <p class="card-subtitle">Convergence measure ||v^(k) - v^(k-1)|| and individual page trajectories.</p>
+            </div>
+          </div>
+
+          <!-- Convergence Curve -->
+          <div style="margin-bottom: 1rem;">
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--slate-700); margin-bottom: 0.25rem;">
+              Logarithmic Convergence Error Rate:
+            </div>
+            <div class="chart-container" style="height: 180px;">
+              <canvas id="convergenceChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Page Trajectories -->
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--slate-700); margin-bottom: 0.25rem;">
+              Page Probability Trajectories over Iterations:
+            </div>
+            <div class="chart-container" style="height: 180px;">
+              <canvas id="rankTrajectoryChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- TAB 2: MATHEMATICAL CONCEPTS & FORMULATION -->
+    <div id="tabMathTheory" class="tab-content">
+      <div class="theory-block">
+        <h2>Mathematical Formulation &amp; Concepts</h2>
+        <p>
+          This mini-project demonstrates the application of <strong>Linear Algebra &amp; Vector Calculus</strong>
+          to model and analyze web page importance via the PageRank Markov process. The system executes eight sequential mathematical stages, where each stage's output serves as the input to the subsequent stage.
+        </p>
+
+        <h3>1. Concept 1: Matrices (Adjacency &amp; Transition Matrices)</h3>
+        <p>
+          Consider a directed web graph \(G = (V, E)\) with \(n\) pages \(P_1, P_2, \dots, P_n\).
+          The hyperlink structure is represented by the <strong>Link / Adjacency Matrix</strong> \(A \in \mathbb{R}^{n \times n}\):
+        </p>
+        <div class="math-formula">
+          \[
+          A_{ij} = \begin{cases} 
+          1 & \text{if page } P_j \text{ contains a hyperlink pointing to page } P_i \\
+          0 & \text{otherwise}
+          \end{cases}
+          \]
+        </div>
+        <p>
+          The out-degree of page \(P_j\) is the sum of outgoing hyperlinks: \(d_j = \sum_{i=1}^n A_{ij}\).
+        </p>
+
+        <h3>2. Concept 2: Markov Chains &amp; Column Stochastic Normalization</h3>
+        <p>
+          A random web surfer at page \(P_j\) navigates to page \(P_i\) with probability proportional to the outgoing links.
+          The <strong>Transition Matrix</strong> \(M \in \mathbb{R}^{n \times n}\) is column-stochastic:
+        </p>
+        <div class="math-formula">
+          \[
+          M_{ij} = \begin{cases} 
+          \frac{A_{ij}}{d_j} & \text{if } d_j > 0 \\
+          \frac{1}{n} & \text{if } d_j = 0 \quad (\text{Dangling Node / Dead End})
+          \end{cases}
+          \]
+        </div>
+        <p>
+          Every column sum satisfies \(\sum_{i=1}^n M_{ij} = 1\), establishing a discrete-time Markov chain.
+        </p>
+
+        <h3>3. Google Damping Matrix &amp; Perron-Frobenius Regularization</h3>
+        <p>
+          To eliminate dead-ends and spider traps (absorbing cycles) and guarantee ergodicity, a damping factor \(d \in (0, 1)\) (typically \(d = 0.85\)) is introduced:
+        </p>
+        <div class="math-formula">
+          \[
+          G = d M + \frac{1 - d}{n} \mathbf{E}
+          \]
+        </div>
+        <p>
+          where \(\mathbf{E} = \mathbf{1}\mathbf{1}^T\) is an \(n \times n\) matrix of all ones. Matrix \(G\) is strictly positive (\(G_{ij} > 0\) for all \(i, j\)), primitive, and column-stochastic.
+        </p>
+
+        <h3>4. Concept 3: Vectors &amp; Linear Transformations</h3>
+        <p>
+          The ranking state at iteration \(k\) is represented by probability vector \(v^{(k)} \in \mathbb{R}^n\) satisfying \(v_i^{(k)} \ge 0\) and \(\|v^{(k)}\|_1 = \sum_{i=1}^n v_i^{(k)} = 1\).
+          The transition from step \(k\) to \(k+1\) is a <strong>linear transformation</strong> \(T: \mathbb{R}^n \to \mathbb{R}^n\):
+        </p>
+        <div class="math-formula">
+          \[
+          v^{(k+1)} = T(v^{(k)}) = G v^{(k)}
+          \]
+        </div>
+
+        <h3>5. Power Iteration &amp; Convergence Analysis</h3>
+        <p>
+          Repeated application yields:
+        </p>
+        <div class="math-formula">
+          \[
+          v^{(k)} = G^k v^{(0)}
+          \]
+        </div>
+        <p>
+          The convergence measure is evaluated at each step using the Euclidean \(\ell_2\) and \(\ell_1\) norm differences:
+        </p>
+        <div class="math-formula">
+          \[
+          \delta_k = \|v^{(k+1)} - v^{(k)}\|_2 = \sqrt{\sum_{i=1}^n \left(v_i^{(k+1)} - v_i^{(k)}\right)^2} < \epsilon
+          \]
+        </div>
+        <p>
+          <strong>Rate of Convergence:</strong> By the Perron-Frobenius theorem, the convergence rate is bounded by the magnitude of the second dominant eigenvalue \(|\lambda_2| \le d\). The spectral gap is \(\gamma = 1 - |\lambda_2|\).
+        </p>
+
+        <h3>6. Concept 4: Eigenvalues &amp; Eigenvectors (Verification)</h3>
+        <p>
+          At convergence (\(k \to \infty\)), the ranking vector approaches a stationary distribution \(v^*\):
+        </p>
+        <div class="math-formula">
+          \[
+          G v^* = 1 \cdot v^* \iff (G - I) v^* = \mathbf{0}
+          \]
+        </div>
+        <p>
+          Thus, the steady-state PageRank vector is the <strong>principal eigenvector</strong> of \(G\) associated with the dominant eigenvalue \(\lambda_1 = 1\).
+          Our software verifies this analytically by setting up the linear system:
+        </p>
+        <div class="math-formula">
+          \[
+          \begin{bmatrix} (G - I)_{1:n-1, :} \\ \mathbf{1}^T \end{bmatrix} v^* = \begin{bmatrix} \mathbf{0} \\ 1 \end{bmatrix}
+          \]
+        </div>
+        <p>
+          and solving via Gaussian Elimination with partial pivoting, confirming \(\|v_{\text{power}}^* - v_{\text{eigen}}^*\|_2 \approx 0\).
+        </p>
+      </div>
+    </div>
+
+    <!-- TAB 3: VIVA VOCE & PRESENTATION GUIDE -->
+    <div id="tabVivaGuide" class="tab-content">
+      <div class="theory-block">
+        <h2>Viva Voce &amp; Presentation Preparation Guide</h2>
+        <p>
+          Use this curated question-and-answer guide to prepare for your project demonstration, viva evaluation, and viva voce presentation.
+        </p>
+
+        <div class="qa-card">
+          <div class="qa-question">
+            <span>Q1. What are the four prescribed mathematical concepts used in this mini-project?</span>
+            <span>Concept Alignment</span>
+          </div>
+          <div class="qa-answer">
+            <p><strong>Answer:</strong></p>
+            <ol>
+              <li><strong>Matrices:</strong> Directed link adjacency matrix \(A\), column-stochastic transition matrix \(M\), and the irreducible Google matrix \(G\).</li>
+              <li><strong>Vectors:</strong> Probability state vectors \(v^{(k)}\), uniform initial ranking vector \(v^{(0)}\), and stationary steady-state ranking vector \(v^*\).</li>
+              <li><strong>Linear Transformations:</strong> The state update equation \(v^{(k+1)} = G v^{(k)}\) is a linear operator \(T(v) = Gv\) that preserves probability mass (\(\|v\|_1 = 1\)).</li>
+              <li><strong>Eigenvalues and Eigenvectors:</strong> The steady-state ranking vector is the eigenvector associated with dominant eigenvalue \(\lambda = 1\) satisfying \(G v^* = v^*\).</li>
+              <li><strong>Markov Chains:</strong> Formulated as a discrete-time ergodic Markov chain over the finite state space of web pages.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="qa-card">
+          <div class="qa-question">
+            <span>Q2. Why is the transition matrix M normalized by columns instead of rows?</span>
+            <span>Markov Properties</span>
+          </div>
+          <div class="qa-answer">
+            <p><strong>Answer:</strong> In the random surfer model, the state vector is a column vector \(v\) where \(v_i\) represents the probability of being on page \(i\). The probability of transitioning from page \(j\) to page \(i\) is \(M_{ij}\). To ensure conservation of probability, the sum over all possible destinations \(i\) given current page \(j\) must equal 1: \(\sum_{i=1}^n M_{ij} = 1\). Hence, every column of \(M\) must sum to 1 (column-stochastic matrix).</p>
+          </div>
+        </div>
+
+        <div class="qa-card">
+          <div class="qa-question">
+            <span>Q3. What is a "Dangling Node" and how does your software handle it?</span>
+            <span>Numerical Stability</span>
+          </div>
+          <div class="qa-answer">
+            <p><strong>Answer:</strong> A dangling node is a web page with no outgoing hyperlinks (out-degree \(d_j = 0\)). If unhandled, column \(j\) in \(M\) would contain all zeros, violating the stochastic property and causing probability mass to leak to 0 over iterations. Our software detects dangling nodes and replaces their column with uniform teleportation: \(M_{ij} = \frac{1}{n}\) for all \(i\), modeling a user opening a random bookmark or typing a new URL.</p>
+          </div>
+        </div>
+
+        <div class="qa-card">
+          <div class="qa-question">
+            <span>Q4. What is a "Spider Trap" and why is the damping factor d introduced?</span>
+            <span>Graph Anomalies</span>
+          </div>
+          <div class="qa-answer">
+            <p><strong>Answer:</strong> A spider trap is a group of pages (or a single self-looping page) with links only amongst themselves. A random surfer entering this group can never leave, absorbing all probability mass so other legitimate pages end up with rank 0. The Google damping factor \(d\) (typically \(0.85\)) introduces a teleportation term \(\frac{1-d}{n}\mathbf{E}\). With probability \(d\), the surfer follows links; with probability \((1-d)\), they jump to any random page on the web. This guarantees the Markov chain is irreducible and aperiodic.</p>
+          </div>
+        </div>
+
+        <div class="qa-card">
+          <div class="qa-question">
+            <span>Q5. Why does the dominant eigenvalue always equal 1 (\(\lambda_1 = 1\))?</span>
+            <span>Perron-Frobenius Theorem</span>
+          </div>
+          <div class="qa-answer">
+            <p><strong>Answer:</strong> Since \(G\) is column-stochastic, its transpose \(G^T\) is row-stochastic: \(G^T \mathbf{1} = \mathbf{1}\), meaning \(\mathbf{1} = [1, 1, \dots, 1]^T\) is an eigenvector of \(G^T\) with eigenvalue \(\lambda = 1\). Because a matrix and its transpose share the same eigenvalues, \(G\) must also have \(\lambda = 1\) as an eigenvalue. Furthermore, by the Perron-Frobenius theorem for strictly positive matrices, \(\lambda = 1\) is strictly dominant (\(|\lambda_i| < 1\) for all \(i \ge 2\)), unique, and its associated eigenvector has strictly positive components.</p>
+          </div>
+        </div>
+
+        <div class="qa-card">
+          <div class="qa-question">
+            <span>Q6. What role does the second eigenvalue \(\lambda_2\) play in convergence?</span>
+            <span>Spectral Gap</span>
+          </div>
+          <div class="qa-answer">
+            <p><strong>Answer:</strong> The asymptotic rate of convergence in power iteration is determined by the ratio \(\left|\frac{\lambda_2}{\lambda_1}\right| = |\lambda_2|\). The error at iteration \(k\) satisfies \(\|v^{(k)} - v^*\| = \mathcal{O}(|\lambda_2|^k)\). Since \(|\lambda_2| \le d\), choosing \(d = 0.85\) guarantees fast exponential convergence in approximately 25 to 40 iterations regardless of web size! The difference \(1 - |\lambda_2|\) is called the <em>spectral gap</em>.</p>
+          </div>
+        </div>
+
+        <div class="qa-card">
+          <div class="qa-question">
+            <span>Q7. How does the software verify the power iteration result analytically?</span>
+            <span>Software Verification</span>
+          </div>
+          <div class="qa-answer">
+            <p><strong>Answer:</strong> The software formulates the homogeneous nullspace problem \((G - I)v = 0\) subject to \(\sum_{i=1}^n v_i = 1\). By replacing one linearly dependent row of \((G - I)\) with the all-ones vector \([1, 1, \dots, 1]\) and right-hand side \([0, \dots, 0, 1]^T\), it solves the non-singular linear system using Gaussian Elimination with partial pivoting. It then computes the Euclidean distance \(\|v_{\text{power}} - v_{\text{eigen}}\|_2\) and residual \(\|G v - v\|_2\), confirming numerical equality down to \(< 10^{-7}\).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: PYTHON CLI & TERMINAL DEMO -->
+    <div id="tabPythonCli" class="tab-content">
+      <div class="theory-block">
+        <h2>Python Implementation &amp; CLI Script</h2>
+        <p>
+          Alongside this web application, a complete, standalone Python implementation is provided in the repository under <code>python/pagerank_analyzer.py</code>. It requires zero external libraries (pure Python standard library) and runs anywhere.
+        </p>
+
+        <h3>How to Run the Python Script:</h3>
+        <pre class="code-box"># Run the default 4-node academic demonstration
+python3 python/pagerank_analyzer.py
+
+# Run with custom damping factor and tolerance
+python3 python/pagerank_analyzer.py --damping 0.85 --tolerance 1e-8 --preset star
+
+# Run automated mathematical verification test suite
+python3 python/demo_example.py</pre>
+
+        <h3>Features of the Python Implementation:</h3>
+        <ul>
+          <li>Builds the Adjacency Matrix \(A\), Transition Matrix \(M\), and Google Matrix \(G\).</li>
+          <li>Handles dangling nodes with uniform teleportation.</li>
+          <li>Executes Power Iteration with full iteration log and Euclidean error tracking.</li>
+          <li>Solves the stationary linear system \((G - I)v = 0\) via Gaussian Elimination.</li>
+          <li>Exports convergence history to CSV and JSON formats.</li>
+        </ul>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- JavaScript Modules -->
+  <script src="js/matrix.js"></script>
+  <script src="js/graph.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>

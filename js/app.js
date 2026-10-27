@@ -1,46 +1,40 @@
 /**
  * Main Application Controller for Web Page Ranking & Convergence Analyzer
- * Orchestrates linear algebra computations, graph visualization, charts,
- * step-by-step sequential process, and verification.
+ * Orchestrates arrow-notation parsing, linear algebra computations,
+ * graph visualization, charts, step-by-step sequential process, and verification.
  */
 
-// Preset Networks
+// Preset Networks in Option 1 Arrow Notation format
 const PRESETS = {
   classic4: {
-    name: "Classic 4-Page Web",
-    description: "Standard 4-page Stanford example with balanced link interplay.",
-    nodes: [{ label: "P1" }, { label: "P2" }, { label: "P3" }, { label: "P4" }],
-    edges: [[0, 1], [0, 2], [1, 2], [2, 0], [3, 0], [3, 2]]
+    name: "Stanford 4-Page Web",
+    text: `P1 -> P2, P3\nP2 -> P3\nP3 -> P1\nP4 -> P1, P3`,
+    description: "Standard 4-page Stanford reference network."
   },
   star: {
     name: "Star Hub Network",
-    description: "Central authority node P1 connected bidirectionally to satellite nodes.",
-    nodes: [{ label: "P1 (Hub)" }, { label: "P2" }, { label: "P3" }, { label: "P4" }, { label: "P5" }],
-    edges: [[0, 1], [0, 2], [0, 3], [0, 4], [1, 0], [2, 0], [3, 0], [4, 0]]
+    text: `Hub -> P1, P2, P3, P4\nP1 -> Hub\nP2 -> Hub\nP3 -> Hub\nP4 -> Hub`,
+    description: "Central authority hub connected bidirectionally to satellite pages."
   },
   linear: {
     name: "Linear Chain",
-    description: "Sequential cascade P1 -> P2 -> P3 -> P4 demonstrating rank accumulation.",
-    nodes: [{ label: "P1" }, { label: "P2" }, { label: "P3" }, { label: "P4" }],
-    edges: [[0, 1], [1, 2], [2, 3]]
+    text: `P1 -> P2\nP2 -> P3\nP3 -> P4`,
+    description: "Sequential cascade showing rank accumulation downstream."
   },
   cycle: {
     name: "Cyclic Ring",
-    description: "Closed symmetric loop P1 -> P2 -> P3 -> P4 -> P1 yielding uniform distribution.",
-    nodes: [{ label: "P1" }, { label: "P2" }, { label: "P3" }, { label: "P4" }],
-    edges: [[0, 1], [1, 2], [2, 3], [3, 0]]
+    text: `P1 -> P2\nP2 -> P3\nP3 -> P4\nP4 -> P1`,
+    description: "Closed symmetric loop yielding uniform stationary distribution."
   },
   spiderTrap: {
     name: "Spider Trap (Absorbing Node)",
-    description: "Node P3 loops onto itself, trapping random surfers when damping d = 1.0.",
-    nodes: [{ label: "P1" }, { label: "P2" }, { label: "P3 (Trap)" }],
-    edges: [[0, 1], [1, 2], [2, 2]]
+    text: `P1 -> P2\nP2 -> P3\nP3 -> P3`,
+    description: "Node P3 loops onto itself, trapping surfers when damping d = 1.0."
   },
   dangling: {
     name: "Dangling Dead-End Node",
-    description: "Page P3 has no outgoing links; requires uniform teleportation normalization.",
-    nodes: [{ label: "P1" }, { label: "P2" }, { label: "P3 (Dead End)" }, { label: "P4" }],
-    edges: [[0, 1], [1, 2], [3, 0], [3, 1]]
+    text: `P1 -> P2\nP2 -> P3\nP3\nP4 -> P1, P2`,
+    description: "Page P3 has no outgoing links (dead end); tests uniform teleportation."
   }
 };
 
@@ -70,62 +64,108 @@ class AppController {
 
     // Populate preset dropdown
     const presetSelect = document.getElementById('presetSelect');
-    Object.entries(PRESETS).forEach(([key, preset]) => {
-      const opt = document.createElement('option');
-      opt.value = key;
-      opt.textContent = preset.name;
-      presetSelect.appendChild(opt);
-    });
+    if (presetSelect) {
+      Object.entries(PRESETS).forEach(([key, preset]) => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = preset.name;
+        presetSelect.appendChild(opt);
+      });
+    }
 
     // Bind event listeners
     this.bindEvents();
 
-    // Load initial preset
+    // Load default classic4 preset into textarea & execute
     this.loadPreset('classic4');
   }
 
   bindEvents() {
-    // Preset change
-    document.getElementById('presetSelect').addEventListener('change', (e) => {
-      this.loadPreset(e.target.value);
+    // Main run button for text input
+    const btnRun = document.getElementById('btnRunFromText');
+    if (btnRun) {
+      btnRun.addEventListener('click', () => {
+        this.parseAndRunFromText();
+      });
+    }
+
+    // Sample preset chips
+    const sampleChips = document.querySelectorAll('.sample-chip');
+    sampleChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        sampleChips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        const key = chip.dataset.preset;
+        if (key === 'clear') {
+          document.getElementById('linksTextInput').value = '';
+          this.showStatus('Input cleared. Enter your links using arrow notation (e.g. Page 1 -> Page 2, Page 3)', 'success');
+        } else if (PRESETS[key]) {
+          this.loadPreset(key);
+        }
+      });
     });
 
-    // Damping factor slider and number input synchronization
+    // Preset dropdown (if changed)
+    const presetSelect = document.getElementById('presetSelect');
+    if (presetSelect) {
+      presetSelect.addEventListener('change', (e) => {
+        this.loadPreset(e.target.value);
+      });
+    }
+
+    // Damping factor slider & input
     const dampingSlider = document.getElementById('dampingSlider');
     const dampingInput = document.getElementById('dampingInput');
-    dampingSlider.addEventListener('input', (e) => {
-      dampingInput.value = e.target.value;
-      this.damping = parseFloat(e.target.value);
-      this.runAnalysis();
-    });
-    dampingInput.addEventListener('input', (e) => {
-      dampingSlider.value = e.target.value;
-      this.damping = parseFloat(e.target.value);
-      this.runAnalysis();
-    });
+    if (dampingSlider && dampingInput) {
+      dampingSlider.addEventListener('input', (e) => {
+        dampingInput.value = e.target.value;
+        this.damping = parseFloat(e.target.value) || 0.85;
+        this.runAnalysis();
+      });
+      dampingInput.addEventListener('input', (e) => {
+        dampingSlider.value = e.target.value;
+        this.damping = parseFloat(e.target.value) || 0.85;
+        this.runAnalysis();
+      });
+    }
 
     // Tolerance input
-    document.getElementById('toleranceSelect').addEventListener('change', (e) => {
-      this.tolerance = parseFloat(e.target.value);
-      this.runAnalysis();
-    });
+    const toleranceSelect = document.getElementById('toleranceSelect');
+    if (toleranceSelect) {
+      toleranceSelect.addEventListener('change', (e) => {
+        this.tolerance = parseFloat(e.target.value) || 1e-7;
+        this.runAnalysis();
+      });
+    }
 
     // Max Iterations input
-    document.getElementById('maxIterInput').addEventListener('input', (e) => {
-      this.maxIter = parseInt(e.target.value) || 100;
-      this.runAnalysis();
-    });
+    const maxIterInput = document.getElementById('maxIterInput');
+    if (maxIterInput) {
+      maxIterInput.addEventListener('input', (e) => {
+        this.maxIter = parseInt(e.target.value) || 100;
+        this.runAnalysis();
+      });
+    }
 
     // Initial vector type change
-    document.getElementById('initVectorSelect').addEventListener('change', (e) => {
-      this.initVectorType = e.target.value;
-      const customContainer = document.getElementById('customVectorContainer');
-      customContainer.style.display = this.initVectorType === 'custom' ? 'block' : 'none';
-      if (this.initVectorType === 'custom') {
-        this.renderCustomVectorInputs();
-      }
-      this.runAnalysis();
-    });
+    const initVectorSelect = document.getElementById('initVectorSelect');
+    const customVectorWrapper = document.getElementById('customVectorWrapper');
+    if (initVectorSelect) {
+      initVectorSelect.addEventListener('change', (e) => {
+        this.initVectorType = e.target.value;
+        if (customVectorWrapper) {
+          customVectorWrapper.style.display = this.initVectorType === 'custom' ? 'block' : 'none';
+        }
+        this.runAnalysis();
+      });
+    }
+
+    const customVectorInput = document.getElementById('customVectorInput');
+    if (customVectorInput) {
+      customVectorInput.addEventListener('input', () => {
+        this.runAnalysis();
+      });
+    }
 
     // Graph tool mode buttons
     const toolBtns = document.querySelectorAll('.tool-btn');
@@ -138,22 +178,22 @@ class AppController {
     });
 
     // Arrange circle button
-    document.getElementById('btnArrangeCircle').addEventListener('click', () => {
-      this.graph.arrangeCircle();
-    });
+    const btnArrange = document.getElementById('btnArrangeCircle');
+    if (btnArrange) {
+      btnArrange.addEventListener('click', () => {
+        this.graph.arrangeCircle();
+      });
+    }
 
     // Stepper controls
-    document.getElementById('btnStepNext').addEventListener('click', () => {
-      this.stepNext();
-    });
+    const btnStep = document.getElementById('btnStepNext');
+    if (btnStep) btnStep.addEventListener('click', () => this.stepNext());
 
-    document.getElementById('btnPlayAnimation').addEventListener('click', () => {
-      this.toggleAnimation();
-    });
+    const btnPlay = document.getElementById('btnPlayAnimation');
+    if (btnPlay) btnPlay.addEventListener('click', () => this.toggleAnimation());
 
-    document.getElementById('btnResetIteration').addEventListener('click', () => {
-      this.resetIteration();
-    });
+    const btnReset = document.getElementById('btnResetIteration');
+    if (btnReset) btnReset.addEventListener('click', () => this.resetIteration());
 
     // Navigation tab switching
     const tabBtns = document.querySelectorAll('.nav-tab');
@@ -163,56 +203,176 @@ class AppController {
         btn.classList.add('active');
         const targetId = btn.dataset.target;
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.getElementById(targetId).classList.add('active');
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) targetEl.classList.add('active');
       });
     });
 
     // Export buttons
-    document.getElementById('btnExportCsv').addEventListener('click', () => this.exportCsv());
-    document.getElementById('btnExportJson').addEventListener('click', () => this.exportJson());
-    document.getElementById('btnPrintReport').addEventListener('click', () => window.print());
+    const btnCsv = document.getElementById('btnExportCsv');
+    if (btnCsv) btnCsv.addEventListener('click', () => this.exportCsv());
+
+    const btnJson = document.getElementById('btnExportJson');
+    if (btnJson) btnJson.addEventListener('click', () => this.exportJson());
+
+    const btnPrint = document.getElementById('btnPrintReport');
+    if (btnPrint) btnPrint.addEventListener('click', () => window.print());
   }
 
   loadPreset(key) {
     const preset = PRESETS[key];
     if (!preset) return;
-    document.getElementById('presetDescription').textContent = preset.description;
-    this.graph.loadGraph(preset.nodes, preset.edges);
+
+    const textarea = document.getElementById('linksTextInput');
+    if (textarea) {
+      textarea.value = preset.text;
+    }
+
+    const desc = document.getElementById('presetDescription');
+    if (desc) desc.textContent = preset.description;
+
+    const select = document.getElementById('presetSelect');
+    if (select) select.value = key;
+
+    this.parseAndRunFromText();
+  }
+
+  /**
+   * Option 1 Arrow-Notation Parser:
+   * Parses text lines like:
+   * Page 1 -> Page 2, Page 3
+   * A -> B, C
+   * Hub <-> Satellite
+   * StandaloneNode (dangling node)
+   */
+  parseArrowNotation(text) {
+    const lines = text.split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0 && !l.startsWith('#') && !l.startsWith('//'));
+
+    if (lines.length === 0) {
+      return { error: "Please enter at least one page link (e.g. Page 1 -> Page 2)" };
+    }
+
+    const nodeMap = new Map(); // label -> integer index
+    const nodes = [];
+    const rawEdges = [];
+
+    const getOrCreateNode = (label) => {
+      const clean = label.trim();
+      if (!clean) return null;
+      if (!nodeMap.has(clean)) {
+        const idx = nodes.length;
+        nodeMap.set(clean, idx);
+        nodes.push({ id: idx, label: clean });
+      }
+      return nodeMap.get(clean);
+    };
+
+    for (let lineNum = 0; lineNum < lines.length; lineNum++) {
+      const line = lines[lineNum];
+
+      // 1. Bidirectional arrow <-> or <=>
+      if (line.includes('<->') || line.includes('<=>')) {
+        const parts = line.split(/<=>|<->/);
+        if (parts.length >= 2) {
+          const left = parts[0].trim();
+          const rightTargets = parts.slice(1).join(',').split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+          const leftIdx = getOrCreateNode(left);
+          for (const r of rightTargets) {
+            const rIdx = getOrCreateNode(r);
+            if (leftIdx !== null && rIdx !== null) {
+              rawEdges.push([leftIdx, rIdx]);
+              rawEdges.push([rIdx, leftIdx]);
+            }
+          }
+          continue;
+        }
+      }
+
+      // 2. Standard directed arrow -> or => or --> or →
+      if (line.includes('->') || line.includes('=>') || line.includes('-->') || line.includes('→')) {
+        const parts = line.split(/-->|->|=>|→/);
+        const source = parts[0].trim();
+        const sIdx = getOrCreateNode(source);
+
+        if (parts.length > 1) {
+          const targetString = parts.slice(1).join(',').trim();
+          if (targetString.length > 0) {
+            const targets = targetString.split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+            for (const target of targets) {
+              const tIdx = getOrCreateNode(target);
+              if (sIdx !== null && tIdx !== null) {
+                rawEdges.push([sIdx, tIdx]);
+              }
+            }
+          }
+        }
+      } else {
+        // 3. Standalone page (useful for dead-end / dangling nodes with 0 outgoing links)
+        getOrCreateNode(line);
+      }
+    }
+
+    if (nodes.length === 0) {
+      return { error: "Could not find any valid page names. Use: Page 1 -> Page 2" };
+    }
+
+    // Deduplicate edges
+    const edgeSet = new Set();
+    const edges = [];
+    for (const [u, v] of rawEdges) {
+      const key = `${u}->${v}`;
+      if (!edgeSet.has(key)) {
+        edgeSet.add(key);
+        edges.push([u, v]);
+      }
+    }
+
+    return { nodes, edges };
+  }
+
+  parseAndRunFromText() {
+    const textarea = document.getElementById('linksTextInput');
+    if (!textarea) return;
+
+    const parsed = this.parseArrowNotation(textarea.value);
+    if (parsed.error) {
+      this.showStatus(`Error: ${parsed.error}`, 'error');
+      return;
+    }
+
+    // Load parsed nodes and edges into Canvas graph
+    this.graph.loadGraph(parsed.nodes, parsed.edges);
     this.graph.arrangeCircle();
+
+    // Show success banner
+    const pageLabels = parsed.nodes.map(n => n.label).join(', ');
+    this.showStatus(`✓ Successfully parsed ${parsed.nodes.length} pages (${pageLabels}) and ${parsed.edges.length} directed links.`, 'success');
+
+    // Run sequential analysis
     this.runAnalysis();
   }
 
-  renderCustomVectorInputs() {
-    const n = this.graph.nodes.length;
-    const container = document.getElementById('customVectorInputs');
-    container.innerHTML = '';
-    for (let i = 0; i < n; i++) {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'vector-input-cell';
-      wrapper.innerHTML = `
-        <label>P${i + 1}:</label>
-        <input type="number" step="0.05" min="0" max="1" value="${(1 / n).toFixed(4)}" data-idx="${i}" class="custom-v-val">
-      `;
-      container.appendChild(wrapper);
-    }
-    container.querySelectorAll('input').forEach(inp => {
-      inp.addEventListener('input', () => this.runAnalysis());
-    });
+  showStatus(msg, type = 'success') {
+    const banner = document.getElementById('inputStatusBanner');
+    if (!banner) return;
+    banner.textContent = msg;
+    banner.className = `status-banner ${type}`;
+    banner.style.display = 'flex';
   }
 
   getInitialVector(n) {
-    if (this.initVectorType === 'biased') {
-      const v = new Array(n).fill(0.1 / (n - 1 || 1));
-      v[0] = 0.9;
-      return LinAlg.vecNormalizeSum(v);
-    } else if (this.initVectorType === 'custom') {
-      const inputs = document.querySelectorAll('.custom-v-val');
-      const v = [];
-      inputs.forEach(inp => v.push(parseFloat(inp.value) || 0));
-      if (v.length === n) {
-        return LinAlg.vecNormalizeSum(v);
+    if (this.initVectorType === 'custom') {
+      const inp = document.getElementById('customVectorInput');
+      if (inp && inp.value.trim().length > 0) {
+        const parts = inp.value.split(/[,;\s]+/).map(x => parseFloat(x)).filter(x => !isNaN(x));
+        if (parts.length === n) {
+          return LinAlg.vecNormalizeSum(parts);
+        }
       }
     }
+    // Default uniform 1/n
     return LinAlg.vecUniform(n);
   }
 
@@ -244,6 +404,7 @@ class AppController {
     // Save state
     this.analysisData = {
       numNodes,
+      nodes: this.graph.nodes.map(n => n.label),
       A,
       M,
       G,
@@ -272,44 +433,63 @@ class AppController {
 
   renderProcessOverview() {
     const d = this.analysisData;
-    document.getElementById('statTotalPages').textContent = d.numNodes;
-    document.getElementById('statTotalLinks').textContent = this.graph.edges.length;
-    document.getElementById('statDanglingNodes').textContent = d.danglingNodes.length > 0 ? d.danglingNodes.map(i => `P${i + 1}`).join(', ') : 'None';
-    document.getElementById('statIterationsToConverge').textContent = d.powerResults.iterations;
-    document.getElementById('statSpectralGap').textContent = (1 - d.lambda2).toFixed(4);
-    document.getElementById('statLambda2').textContent = d.lambda2.toFixed(4);
+    const elPages = document.getElementById('statTotalPages');
+    if (elPages) elPages.textContent = d.numNodes;
+
+    const elLinks = document.getElementById('statTotalLinks');
+    if (elLinks) elLinks.textContent = this.graph.edges.length;
+
+    const elDangling = document.getElementById('statDanglingNodes');
+    if (elDangling) {
+      elDangling.textContent = d.danglingNodes.length > 0 
+        ? d.danglingNodes.map(i => d.nodes[i]).join(', ') 
+        : 'None';
+    }
+
+    const elIters = document.getElementById('statIterationsToConverge');
+    if (elIters) elIters.textContent = d.powerResults.iterations;
+
+    const elGap = document.getElementById('statSpectralGap');
+    if (elGap) elGap.textContent = (1 - d.lambda2).toFixed(4);
+
+    const elL2 = document.getElementById('statLambda2');
+    if (elL2) elL2.textContent = d.lambda2.toFixed(4);
   }
 
   renderStageMatrices() {
     const d = this.analysisData;
-    const n = d.numNodes;
 
     // Render Link/Adjacency Matrix A
     const aContainer = document.getElementById('matrixAdjacency');
-    aContainer.innerHTML = this.generateMatrixHTML(d.A, 'A', 'integer');
+    if (aContainer) aContainer.innerHTML = this.generateMatrixHTML(d.A, 'A', 'integer');
 
     // Render Transition Matrix M
     const mContainer = document.getElementById('matrixTransition');
-    mContainer.innerHTML = this.generateMatrixHTML(d.M, 'M', 'probability');
+    if (mContainer) mContainer.innerHTML = this.generateMatrixHTML(d.M, 'M', 'probability');
 
     // Render Google Matrix G
     const gContainer = document.getElementById('matrixGoogle');
-    gContainer.innerHTML = this.generateMatrixHTML(d.G, 'G', 'probability');
+    if (gContainer) gContainer.innerHTML = this.generateMatrixHTML(d.G, 'G', 'probability');
 
     // Display summary pill tags
-    document.getElementById('outDegreesPill').textContent = d.outDegrees.map((deg, i) => `P${i + 1}: ${deg}`).join(' | ');
+    const outPill = document.getElementById('outDegreesPill');
+    if (outPill) {
+      outPill.textContent = d.outDegrees.map((deg, i) => `${d.nodes[i]}: ${deg}`).join(' | ');
+    }
   }
 
   generateMatrixHTML(matrix, name, format = 'float') {
     const n = matrix.length;
+    const labels = this.analysisData.nodes;
+
     let html = `<div class="matrix-table-wrapper"><table class="matrix-table"><thead><tr><th>${name}</th>`;
     for (let j = 0; j < n; j++) {
-      html += `<th>P${j + 1}</th>`;
+      html += `<th>${labels[j]}</th>`;
     }
     html += `</tr></thead><tbody>`;
 
     for (let i = 0; i < n; i++) {
-      html += `<tr><th>P${i + 1}</th>`;
+      html += `<tr><th>${labels[i]}</th>`;
       for (let j = 0; j < n; j++) {
         const val = matrix[i][j];
         let displayVal = format === 'integer' ? val : val.toFixed(4);
@@ -331,11 +511,13 @@ class AppController {
   renderInitialVector() {
     const d = this.analysisData;
     const v0Container = document.getElementById('initialVectorDisplay');
+    if (!v0Container) return;
+
     let html = `<div class="vector-display-row">`;
     d.v0.forEach((val, i) => {
       html += `
         <div class="vector-chip">
-          <span class="chip-label">P${i + 1}</span>
+          <span class="chip-label">${d.nodes[i]}</span>
           <span class="chip-val">${val.toFixed(4)}</span>
         </div>
       `;
@@ -347,20 +529,20 @@ class AppController {
   renderIterationTable() {
     const d = this.analysisData;
     const tbody = document.getElementById('iterationTableBody');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
     const history = d.powerResults.history;
-    // Show first 15 and last 5 if history is long
     const shouldTruncate = history.length > 25;
     const stepsToShow = shouldTruncate
       ? [...history.slice(0, 15), null, ...history.slice(-5)]
       : history;
 
-    stepsToShow.forEach((step, idx) => {
+    stepsToShow.forEach((step) => {
       if (step === null) {
         const tr = document.createElement('tr');
         tr.className = 'ellipsis-row';
-        tr.innerHTML = `<td colspan="${d.numNodes + 4}">... (${history.length - 20} intermediate iterations omitted for display) ...</td>`;
+        tr.innerHTML = `<td colspan="${d.numNodes + 4}" style="text-align: center; color: #64748b; font-style: italic;">... (${history.length - 20} intermediate iterations omitted for display) ...</td>`;
         tbody.appendChild(tr);
         return;
       }
@@ -368,9 +550,7 @@ class AppController {
       const tr = document.createElement('tr');
       if (step.converged) tr.className = 'converged-row';
 
-      let cells = `
-        <td><strong>k = ${step.iteration}</strong></td>
-      `;
+      let cells = `<td><strong>k = ${step.iteration}</strong></td>`;
       step.vector.forEach(v => {
         cells += `<td>${v.toFixed(5)}</td>`;
       });
@@ -383,13 +563,15 @@ class AppController {
       tbody.appendChild(tr);
     });
 
-    // Update iteration table headers
     const theadRow = document.getElementById('iterationTableHeadRow');
-    theadRow.innerHTML = `<th>Iteration (k)</th>`;
-    for (let i = 0; i < d.numNodes; i++) {
-      theadRow.innerHTML += `<th>v_${i + 1}</th>`;
+    if (theadRow) {
+      let headHtml = `<th>Iteration (k)</th>`;
+      for (let i = 0; i < d.numNodes; i++) {
+        headHtml += `<th>${d.nodes[i]}</th>`;
+      }
+      headHtml += `<th>||v^(k) - v^(k-1)||_2</th><th>L1 Norm Diff</th><th>Status</th>`;
+      theadRow.innerHTML = headHtml;
     }
-    theadRow.innerHTML += `<th>||v^(k) - v^(k-1)||_2</th><th>L1 Norm Diff</th><th>Status</th>`;
   }
 
   renderConvergenceChart() {
@@ -398,7 +580,9 @@ class AppController {
     const l2Errors = history.slice(1).map(h => h.deltaL2);
     const l1Errors = history.slice(1).map(h => h.deltaL1);
 
-    const ctx = document.getElementById('convergenceChart').getContext('2d');
+    const canvas = document.getElementById('convergenceChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
 
     if (this.chart) {
       this.chart.destroy();
@@ -456,15 +640,15 @@ class AppController {
     const history = this.analysisData.powerResults.history;
     const n = this.analysisData.numNodes;
     const labels = history.map(h => `k=${h.iteration}`);
+    const nodeLabels = this.analysisData.nodes;
 
-    // Palette of distinguishable colors
     const colors = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#8b5cf6', '#06b6d4', '#ec4899', '#64748b'];
 
     const datasets = [];
     for (let i = 0; i < n; i++) {
       const pageTrajectory = history.map(h => h.vector[i]);
       datasets.push({
-        label: `Page P${i + 1}`,
+        label: nodeLabels[i],
         data: pageTrajectory,
         borderColor: colors[i % colors.length],
         borderWidth: 2,
@@ -473,7 +657,9 @@ class AppController {
       });
     }
 
-    const ctx = document.getElementById('rankTrajectoryChart').getContext('2d');
+    const canvas = document.getElementById('rankTrajectoryChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     if (this.rankTrajectoryChart) {
       this.rankTrajectoryChart.destroy();
     }
@@ -505,16 +691,16 @@ class AppController {
     const d = this.analysisData;
     const finalV = d.powerResults.finalVector;
 
-    // Create ranked list
     const ranked = finalV.map((score, idx) => ({
       index: idx,
-      label: `Page P${idx + 1}`,
+      label: d.nodes[idx],
       score,
       inDeg: d.inDegrees[idx],
       outDeg: d.outDegrees[idx]
     })).sort((a, b) => b.score - a.score);
 
     const container = document.getElementById('finalRankingTableBody');
+    if (!container) return;
     container.innerHTML = '';
 
     ranked.forEach((item, rank) => {
@@ -542,25 +728,28 @@ class AppController {
     const eigenV = d.eigenResults.eigenvector;
     const powerV = d.powerResults.finalVector;
 
-    // Norm difference between Power Iteration and Analytical Eigenvector
     const l2Diff = LinAlg.vecDiffNorm2(powerV, eigenV);
-    const l1Diff = LinAlg.vecDiffNorm1(powerV, eigenV);
     const residual = d.eigenResults.residual;
 
-    document.getElementById('eigenResidualVal').textContent = residual.toExponential(4);
-    document.getElementById('eigenPowerDiffVal').textContent = l2Diff.toExponential(4);
+    const elRes = document.getElementById('eigenResidualVal');
+    if (elRes) elRes.textContent = residual.toExponential(4);
+
+    const elDiff = document.getElementById('eigenPowerDiffVal');
+    if (elDiff) elDiff.textContent = l2Diff.toExponential(4);
 
     const statusBadge = document.getElementById('eigenStatusBadge');
-    if (l2Diff < 1e-4) {
-      statusBadge.textContent = 'VERIFIED PERFECT MATCH (Error < 10^-4)';
-      statusBadge.className = 'status-badge badge-success';
-    } else {
-      statusBadge.textContent = 'APPROXIMATE CONVERGENCE';
-      statusBadge.className = 'status-badge badge-warning';
+    if (statusBadge) {
+      if (l2Diff < 1e-4) {
+        statusBadge.textContent = 'VERIFIED PERFECT MATCH (Error < 10^-4)';
+        statusBadge.className = 'status-badge badge-success';
+      } else {
+        statusBadge.textContent = 'APPROXIMATE CONVERGENCE';
+        statusBadge.className = 'status-badge badge-warning';
+      }
     }
 
-    // Comparison table
     const tbody = document.getElementById('eigenComparisonTableBody');
+    if (!tbody) return;
     tbody.innerHTML = '';
     for (let i = 0; i < d.numNodes; i++) {
       const tr = document.createElement('tr');
@@ -568,7 +757,7 @@ class AppController {
       const eVal = eigenV[i];
       const diff = Math.abs(pVal - eVal);
       tr.innerHTML = `
-        <td><strong>Page P${i + 1}</strong></td>
+        <td><strong>${d.nodes[i]}</strong></td>
         <td>${pVal.toFixed(6)}</td>
         <td>${eVal.toFixed(6)}</td>
         <td><span class="code-val">${diff.toExponential(3)}</span></td>
@@ -589,6 +778,7 @@ class AppController {
 
   toggleAnimation() {
     const btn = document.getElementById('btnPlayAnimation');
+    if (!btn) return;
     if (this.animationTimer) {
       clearInterval(this.animationTimer);
       this.animationTimer = null;
@@ -613,7 +803,8 @@ class AppController {
     if (this.animationTimer) {
       clearInterval(this.animationTimer);
       this.animationTimer = null;
-      document.getElementById('btnPlayAnimation').textContent = 'Play Animation';
+      const btn = document.getElementById('btnPlayAnimation');
+      if (btn) btn.textContent = 'Play Animation';
     }
     this.currentStepIndex = 0;
     this.highlightStep(0);
@@ -623,15 +814,18 @@ class AppController {
     const history = this.analysisData.powerResults.history;
     const step = history[stepIdx];
     this.graph.updateRanks(step.vector);
-    document.getElementById('currentStepDisplay').textContent = `Iteration k = ${step.iteration} / ${history.length - 1}`;
+    const disp = document.getElementById('currentStepDisplay');
+    if (disp) {
+      disp.textContent = `Iteration k = ${step.iteration} / ${history.length - 1}`;
+    }
   }
 
   exportCsv() {
     if (!this.analysisData) return;
     const history = this.analysisData.powerResults.history;
-    const n = this.analysisData.numNodes;
+    const labels = this.analysisData.nodes;
 
-    let csv = 'Iteration,' + Array.from({ length: n }, (_, i) => `P${i + 1}`).join(',') + ',Norm2_Diff,Norm1_Diff,Converged\n';
+    let csv = 'Iteration,' + labels.join(',') + ',Norm2_Diff,Norm1_Diff,Converged\n';
     history.forEach(h => {
       csv += `${h.iteration},${h.vector.map(v => v.toFixed(6)).join(',')},${h.deltaL2.toExponential(4)},${h.deltaL1.toExponential(4)},${h.converged}\n`;
     });

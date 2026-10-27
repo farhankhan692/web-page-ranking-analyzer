@@ -6,6 +6,8 @@ Web links -> Adjacency matrix -> Matrix normalization -> Initial ranking vector
 -> Repeated transformation -> Convergence analysis -> Final ranking -> Eigenvector verification
 
 Zero external dependencies required (uses Python standard library).
+Supports Option 1 Arrow Notation input:
+e.g. "Page 1 -> Page 2, Page 3"
 """
 
 import sys
@@ -16,36 +18,86 @@ import argparse
 
 PRESETS = {
     "classic4": {
-        "name": "Classic 4-Page Web",
-        "nodes": ["P1", "P2", "P3", "P4"],
-        "edges": [[0, 1], [0, 2], [1, 2], [2, 0], [3, 0], [3, 2]]
+        "name": "Stanford 4-Page Web",
+        "text": "P1 -> P2, P3\nP2 -> P3\nP3 -> P1\nP4 -> P1, P3"
     },
     "star": {
         "name": "Star Hub Network",
-        "nodes": ["P1 (Hub)", "P2", "P3", "P4", "P5"],
-        "edges": [[0, 1], [0, 2], [0, 3], [0, 4], [1, 0], [2, 0], [3, 0], [4, 0]]
+        "text": "Hub -> P1, P2, P3, P4\nP1 -> Hub\nP2 -> Hub\nP3 -> Hub\nP4 -> Hub"
     },
     "linear": {
         "name": "Linear Chain",
-        "nodes": ["P1", "P2", "P3", "P4"],
-        "edges": [[0, 1], [1, 2], [2, 3]]
+        "text": "P1 -> P2\nP2 -> P3\nP3 -> P4"
     },
     "cycle": {
         "name": "Cyclic Ring",
-        "nodes": ["P1", "P2", "P3", "P4"],
-        "edges": [[0, 1], [1, 2], [2, 3], [3, 0]]
+        "text": "P1 -> P2\nP2 -> P3\nP3 -> P4\nP4 -> P1"
     },
     "spiderTrap": {
         "name": "Spider Trap (Absorbing Node)",
-        "nodes": ["P1", "P2", "P3 (Trap)"],
-        "edges": [[0, 1], [1, 2], [2, 2]]
+        "text": "P1 -> P2\nP2 -> P3\nP3 -> P3"
     },
     "dangling": {
         "name": "Dangling Dead-End Node",
-        "nodes": ["P1", "P2", "P3 (Dead End)", "P4"],
-        "edges": [[0, 1], [1, 2], [3, 0], [3, 1]]
+        "text": "P1 -> P2\nP2 -> P3\nP3\nP4 -> P1, P2"
     }
 }
+
+def parse_arrow_notation(text):
+    """
+    Parses links formatted in Option 1 Arrow Notation:
+    Page 1 -> Page 2, Page 3
+    A <-> B (bidirectional)
+    DanglingPage (standalone)
+    """
+    lines = [l.strip() for l in text.strip().splitlines() if l.strip() and not l.strip().startswith(('#', '//'))]
+    node_map = {}
+    nodes = []
+    raw_edges = []
+
+    def get_or_create(label):
+        clean = label.strip()
+        if not clean:
+            return None
+        if clean not in node_map:
+            idx = len(nodes)
+            node_map[clean] = idx
+            nodes.append(clean)
+        return node_map[clean]
+
+    for line in lines:
+        if "<->" in line or "<=>" in line:
+            parts = line.split("<->" if "<->" in line else "<=>")
+            if len(parts) >= 2:
+                left = parts[0].strip()
+                rights = [r.strip() for r in parts[1].replace(';', ',').split(',') if r.strip()]
+                l_idx = get_or_create(left)
+                for r in rights:
+                    r_idx = get_or_create(r)
+                    if l_idx is not None and r_idx is not None:
+                        raw_edges.append((l_idx, r_idx))
+                        raw_edges.append((r_idx, l_idx))
+                continue
+
+        if any(arrow in line for arrow in ["->", "=>", "-->", "→"]):
+            for arrow in ["-->", "->", "=>", "→"]:
+                if arrow in line:
+                    parts = line.split(arrow, 1)
+                    break
+            source = parts[0].strip()
+            s_idx = get_or_create(source)
+            if len(parts) > 1 and parts[1].strip():
+                targets = [t.strip() for t in parts[1].replace(';', ',').split(',') if t.strip()]
+                for target in targets:
+                    t_idx = get_or_create(target)
+                    if s_idx is not None and t_idx is not None:
+                        raw_edges.append((s_idx, t_idx))
+        else:
+            get_or_create(line)
+
+    edges = list(dict.fromkeys(raw_edges))
+    return nodes, edges
+
 
 class PageRankAnalyzer:
     def __init__(self, nodes, edges, damping=0.85, tolerance=1e-7, max_iter=100):
@@ -164,15 +216,12 @@ class PageRankAnalyzer:
         via Gaussian Elimination with partial pivoting.
         """
         n = self.n
-        # Augmented matrix B * v = [0, ..., 0, 1]^T
         B = [[self.G[i][j] - (1.0 if i == j else 0.0) for j in range(n)] for i in range(n)]
-        # Replace last row with sum condition
         B[n - 1] = [1.0] * n
         b = [0.0] * (n - 1) + [1.0]
 
         aug = [B[i][:] + [b[i]] for i in range(n)]
 
-        # Forward elimination with partial pivoting
         for i in range(n):
             max_row = i
             max_val = abs(aug[i][i])
@@ -194,7 +243,6 @@ class PageRankAnalyzer:
                 for j in range(i + 1, n + 1):
                     aug[k][j] -= factor * aug[i][j]
 
-        # Back substitution
         x = [0.0] * n
         for i in range(n - 1, -1, -1):
             s = aug[i][n]
@@ -202,11 +250,9 @@ class PageRankAnalyzer:
                 s -= aug[i][j] * x[j]
             x[i] = s / aug[i][i] if abs(aug[i][i]) > 1e-12 else 0.0
 
-        # Normalize sum = 1
         s = sum(x)
         self.eigen_vector = [val / s for val in x]
 
-        # Residual norm ||G*v - v||_2
         Gv = [sum(self.G[i][j] * self.eigen_vector[j] for j in range(n)) for i in range(n)]
         self.eigen_residual = math.sqrt(sum((Gv[i] - self.eigen_vector[i]) ** 2 for i in range(n)))
         return self.eigen_vector
@@ -282,18 +328,24 @@ class PageRankAnalyzer:
 
 def main():
     parser = argparse.ArgumentParser(description="Web Page Ranking and Convergence Analyzer CLI")
+    parser.add_argument("--links", type=str, default=None, help="Input page links in Option 1 Arrow Notation (e.g. 'P1 -> P2, P3\\nP2 -> P3')")
     parser.add_argument("--preset", choices=list(PRESETS.keys()), default="classic4", help="Choose a network topology preset")
     parser.add_argument("--damping", type=float, default=0.85, help="Google damping factor d (0.0 to 1.0)")
     parser.add_argument("--tolerance", type=float, default=1e-7, help="Convergence tolerance epsilon")
     parser.add_argument("--max_iter", type=int, default=100, help="Maximum iteration cutoff")
     args = parser.parse_args()
 
-    preset_data = PRESETS[args.preset]
-    print(f"\nLoading preset: {preset_data['name']}...")
+    if args.links:
+        print("\nParsing custom arrow notation links...")
+        nodes, edges = parse_arrow_notation(args.links)
+    else:
+        preset_data = PRESETS[args.preset]
+        print(f"\nLoading preset: {preset_data['name']}...")
+        nodes, edges = parse_arrow_notation(preset_data["text"])
 
     analyzer = PageRankAnalyzer(
-        nodes=preset_data["nodes"],
-        edges=preset_data["edges"],
+        nodes=nodes,
+        edges=edges,
         damping=args.damping,
         tolerance=args.tolerance,
         max_iter=args.max_iter

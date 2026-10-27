@@ -10,20 +10,19 @@ Tests all network presets for:
 """
 
 import sys
-from pagerank_analyzer import PageRankAnalyzer, PRESETS
+from pagerank_analyzer import PageRankAnalyzer, PRESETS, parse_arrow_notation
 
 def run_tests():
     print("=" * 65)
     print("  RUNNING MATHEMATICAL VERIFICATION TEST SUITE")
     print("=" * 65)
 
-    all_passed = True
-
     for key, preset in PRESETS.items():
-        print(f"\nTesting Preset: {preset['name']} ({len(preset['nodes'])} nodes)...")
+        nodes, edges = parse_arrow_notation(preset["text"])
+        print(f"\nTesting Preset: {preset['name']} ({len(nodes)} nodes)...")
         analyzer = PageRankAnalyzer(
-            nodes=preset["nodes"],
-            edges=preset["edges"],
+            nodes=nodes,
+            edges=edges,
             damping=0.85,
             tolerance=1e-8,
             max_iter=150

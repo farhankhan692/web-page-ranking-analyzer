@@ -42,37 +42,141 @@
   <!-- Navigation Tabs -->
   <nav class="nav-tabs-wrapper">
     <div class="nav-tabs-inner">
-      <button class="nav-tab active" data-target="tabInteractive">Interactive Analyzer &amp; Visualizer</button>
-      <button class="nav-tab" data-target="tabMathTheory">Mathematical Formulation &amp; Concepts</button>
-      <button class="nav-tab" data-target="tabVivaGuide">Viva Voce &amp; Presentation Q&amp;A</button>
-      <button class="nav-tab" data-target="tabPythonCli">Python Script &amp; Terminal Demo</button>
+      <button class="nav-tab active" data-target="tabInteractive">PageRank Analyzer &amp; Visualizer</button>
+      <button class="nav-tab" data-target="tabMathTheory">Mathematical Formulation &amp; Derivations</button>
     </div>
   </nav>
 
   <!-- Main Container -->
   <main class="main-container">
 
-    <!-- Sequential Mathematical Process Flow Bar -->
-    <div class="pipeline-bar">
-      <div class="pipeline-step"><span class="step-number">1</span> Directed Web Graph</div>
-      <span class="pipeline-arrow">&rarr;</span>
-      <div class="pipeline-step"><span class="step-number">2</span> Adjacency Matrix (A)</div>
-      <span class="pipeline-arrow">&rarr;</span>
-      <div class="pipeline-step"><span class="step-number">3</span> Normalized Matrix (M, G)</div>
-      <span class="pipeline-arrow">&rarr;</span>
-      <div class="pipeline-step"><span class="step-number">4</span> Initial Vector (v&sup0;)</div>
-      <span class="pipeline-arrow">&rarr;</span>
-      <div class="pipeline-step"><span class="step-number">5</span> Power Iteration</div>
-      <span class="pipeline-arrow">&rarr;</span>
-      <div class="pipeline-step"><span class="step-number">6</span> Convergence Analysis</div>
-      <span class="pipeline-arrow">&rarr;</span>
-      <div class="pipeline-step"><span class="step-number">7</span> Final Ranking</div>
-      <span class="pipeline-arrow">&rarr;</span>
-      <div class="pipeline-step"><span class="step-number">8</span> Eigenvector Verification</div>
-    </div>
-
     <!-- TAB 1: INTERACTIVE ANALYZER -->
     <div id="tabInteractive" class="tab-content active">
+
+      <!-- STAGE 1 INPUT CARD -->
+      <div class="card input-panel-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Stage 1 Input: Web Page Links &amp; Initial Vector</h2>
+            <p class="card-subtitle">
+              Type or paste page links using arrow notation (e.g. <code>Page 1 -&gt; Page 2, Page 3</code> or <code>A -&gt; B</code>), or click a preset sample below.
+            </p>
+          </div>
+        </div>
+
+        <!-- Sample Presets Quick-Chips -->
+        <div class="sample-chips-row">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--slate-600); margin-right: 0.3rem;">Quick Samples:</span>
+          <button class="sample-chip active" data-preset="classic4">Stanford 4-Page Web</button>
+          <button class="sample-chip" data-preset="star">Star Hub Network</button>
+          <button class="sample-chip" data-preset="linear">Linear Chain</button>
+          <button class="sample-chip" data-preset="cycle">Cyclic Ring</button>
+          <button class="sample-chip" data-preset="spiderTrap">Spider Trap (Absorbing Node)</button>
+          <button class="sample-chip" data-preset="dangling">Dangling Dead-End Node</button>
+          <button class="sample-chip" data-preset="clear" style="border-color: #fca5a5; color: #b91c1c;">Clear Input</button>
+        </div>
+
+        <!-- Two Column Input: Links on Left, Simulation Parameters on Right -->
+        <div class="input-two-col">
+          
+          <!-- Left Column: Links Textarea -->
+          <div>
+            <label for="linksTextInput" style="font-size: 0.85rem; font-weight: 700; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">
+              Enter Page Hyperlinks (Arrow Notation):
+            </label>
+            <textarea id="linksTextInput" class="links-textarea" spellcheck="false" placeholder="Page 1 -> Page 2, Page 3&#10;Page 2 -> Page 3&#10;Page 3 -> Page 1&#10;Page 4 -> Page 1, Page 3"></textarea>
+            <p class="help-text">
+              <strong>Supported Syntax:</strong> <code>Source -&gt; Target1, Target2</code> &bull; Bidirectional: <code>A &lt;-&gt; B</code> &bull; Dangling / Dead-End: enter page name on its own line (e.g. <code>Page 4</code>).
+            </p>
+          </div>
+
+          <!-- Right Column: Parameters -->
+          <div>
+            <label style="font-size: 0.85rem; font-weight: 700; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">
+              Parameters &amp; Initial Ranking Vector:
+            </label>
+            <div class="params-grid">
+              
+              <!-- Damping Factor -->
+              <div class="control-group">
+                <label for="dampingSlider">Damping Factor (d):</label>
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <input type="range" id="dampingSlider" min="0" max="1" step="0.01" value="0.85">
+                  <input type="number" id="dampingInput" min="0" max="1" step="0.01" value="0.85" style="width: 60px;">
+                </div>
+              </div>
+
+              <!-- Convergence Tolerance -->
+              <div class="control-group">
+                <label for="toleranceSelect">Convergence Tolerance (&epsilon;):</label>
+                <select id="toleranceSelect">
+                  <option value="1e-4">10⁻⁴ (Fast)</option>
+                  <option value="1e-7" selected>10⁻⁷ (Standard)</option>
+                  <option value="1e-10">10⁻¹⁰ (High Precision)</option>
+                </select>
+              </div>
+
+              <!-- Initial Vector Type -->
+              <div class="control-group">
+                <label for="initVectorSelect">Initial Vector (v&sup0;):</label>
+                <select id="initVectorSelect">
+                  <option value="uniform" selected>Uniform (1/n each)</option>
+                  <option value="custom">Custom Values</option>
+                </select>
+              </div>
+
+              <!-- Max Iterations -->
+              <div class="control-group">
+                <label for="maxIterInput">Max Iterations:</label>
+                <input type="number" id="maxIterInput" value="100" min="10" max="500">
+              </div>
+
+            </div>
+
+            <!-- Custom Vector Input Box (Toggled) -->
+            <div id="customVectorWrapper" style="display: none; margin-top: 0.5rem; background: var(--slate-50); padding: 0.6rem; border-radius: 6px; border: 1px solid var(--slate-200);">
+              <label for="customVectorInput" style="font-size: 0.78rem; font-weight: 600; color: var(--slate-700);">
+                Enter comma-separated values for v&sup0; (will auto-normalize to sum to 1):
+              </label>
+              <input type="text" id="customVectorInput" placeholder="e.g. 0.4, 0.2, 0.2, 0.2" style="margin-top: 0.25rem;">
+            </div>
+
+            <!-- Run Button -->
+            <div style="margin-top: 0.85rem;">
+              <button class="btn-run-analysis" id="btnRunFromText">
+                Compute PageRank &amp; Run Analysis
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Live Status / Validation Banner -->
+        <div id="inputStatusBanner" class="status-banner success">
+          Parsed 4 pages and 6 directed hyperlinks successfully.
+        </div>
+
+      </div>
+
+      <!-- Sequential Mathematical Process Flow Bar -->
+      <div class="pipeline-bar">
+        <div class="pipeline-step"><span class="step-number">1</span> Web Links</div>
+        <span class="pipeline-arrow">&rarr;</span>
+        <div class="pipeline-step"><span class="step-number">2</span> Adjacency Matrix (A)</div>
+        <span class="pipeline-arrow">&rarr;</span>
+        <div class="pipeline-step"><span class="step-number">3</span> Normalized Matrix (M, G)</div>
+        <span class="pipeline-arrow">&rarr;</span>
+        <div class="pipeline-step"><span class="step-number">4</span> Initial Vector (v&sup0;)</div>
+        <span class="pipeline-arrow">&rarr;</span>
+        <div class="pipeline-step"><span class="step-number">5</span> Power Iteration</div>
+        <span class="pipeline-arrow">&rarr;</span>
+        <div class="pipeline-step"><span class="step-number">6</span> Convergence Analysis</div>
+        <span class="pipeline-arrow">&rarr;</span>
+        <div class="pipeline-step"><span class="step-number">7</span> Final Ranking</div>
+        <span class="pipeline-arrow">&rarr;</span>
+        <div class="pipeline-step"><span class="step-number">8</span> Eigenvector Verification</div>
+      </div>
 
       <!-- Key Performance Metrics Summary Bar -->
       <div class="metrics-row">
@@ -86,11 +190,11 @@
         </div>
         <div class="metric-card">
           <div class="metric-label">Dangling Pages (Dead Ends)</div>
-          <div class="metric-value" id="statDanglingNodes" style="font-size: 1.1rem; color: #d97706;">None</div>
+          <div class="metric-value" id="statDanglingNodes" style="font-size: 1.05rem; color: #d97706;">None</div>
         </div>
         <div class="metric-card">
           <div class="metric-label">Iterations to Converge</div>
-          <div class="metric-value" id="statIterationsToConverge" style="color: var(--primary);">27</div>
+          <div class="metric-value" id="statIterationsToConverge" style="color: var(--primary);">31</div>
         </div>
         <div class="metric-card">
           <div class="metric-label">Second Eigenvalue |&lambda;&sub2;|</div>
@@ -102,79 +206,30 @@
         </div>
       </div>
 
-      <!-- Controls & Network Graph Row -->
+      <!-- Graph Visualizer & Final Ranking Row -->
       <div class="dashboard-grid">
         
-        <!-- Left Column: Graph Visualizer & Topology Presets -->
+        <!-- Left Column: Graph Visualizer -->
         <div class="card">
           <div class="card-header">
             <div>
-              <h2 class="card-title">Stage 1: Web Topology &amp; Interactive Graph</h2>
-              <p class="card-subtitle">Drag nodes, select network presets, or click canvas to add nodes &amp; links.</p>
+              <h2 class="card-title">Network Graph Visualization</h2>
+              <p class="card-subtitle">Nodes are scaled dynamically by their computed PageRank score.</p>
             </div>
             <button class="btn" id="btnArrangeCircle">Rearrange Circle</button>
           </div>
 
-          <!-- Network Preset Selection -->
-          <div style="margin-bottom: 0.85rem;">
-            <label style="font-size: 0.82rem; font-weight: 600; color: var(--slate-600); display: block; margin-bottom: 0.3rem;">Choose Network Preset:</label>
-            <select id="presetSelect" style="width: 100%;">
-              <!-- Populated by JS -->
-            </select>
-            <p id="presetDescription" style="font-size: 0.8rem; color: var(--slate-600); margin-top: 0.35rem; font-style: italic;"></p>
-          </div>
-
           <!-- Canvas Interactive Toolbar -->
           <div style="display: flex; gap: 0.4rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
-            <button class="btn tool-btn active" data-mode="drag">Move / Select</button>
+            <button class="btn tool-btn active" data-mode="drag">Move / Drag</button>
             <button class="btn tool-btn" data-mode="addNode">+ Add Node</button>
-            <button class="btn tool-btn" data-mode="addLink">+ Add Link (From &rarr; To)</button>
-            <button class="btn tool-btn" data-mode="delete">&times; Delete Node</button>
+            <button class="btn tool-btn" data-mode="addLink">+ Add Link</button>
+            <button class="btn tool-btn" data-mode="delete">&times; Delete</button>
           </div>
 
           <!-- Canvas -->
           <div class="canvas-container">
             <canvas id="networkCanvas" height="420"></canvas>
-          </div>
-
-          <!-- Simulation Parameters Toolbar -->
-          <div class="controls-bar" style="margin-top: 1rem; margin-bottom: 0;">
-            <div class="control-group">
-              <label for="dampingSlider">Damping Factor (d):</label>
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <input type="range" id="dampingSlider" min="0" max="1" step="0.01" value="0.85" style="width: 110px;">
-                <input type="number" id="dampingInput" min="0" max="1" step="0.01" value="0.85" style="width: 65px;">
-              </div>
-            </div>
-
-            <div class="control-group">
-              <label for="toleranceSelect">Convergence Tolerance (&epsilon;):</label>
-              <select id="toleranceSelect">
-                <option value="1e-4">10⁻⁴ (Fast)</option>
-                <option value="1e-7" selected>10⁻⁷ (Standard)</option>
-                <option value="1e-10">10⁻¹⁰ (High Precision)</option>
-              </select>
-            </div>
-
-            <div class="control-group">
-              <label for="initVectorSelect">Initial Ranking Vector (v&sup0;):</label>
-              <select id="initVectorSelect">
-                <option value="uniform" selected>Uniform (1/n each)</option>
-                <option value="biased">Biased toward P1</option>
-                <option value="custom">Custom Values</option>
-              </select>
-            </div>
-
-            <div class="control-group">
-              <label for="maxIterInput">Max Iterations:</label>
-              <input type="number" id="maxIterInput" value="100" min="10" max="500" style="width: 70px;">
-            </div>
-          </div>
-
-          <!-- Custom vector input panel (hidden by default) -->
-          <div id="customVectorContainer" style="display: none; margin-top: 0.75rem; padding: 0.75rem; background: #f1f5f9; border-radius: 6px;">
-            <label style="font-size: 0.8rem; font-weight: 600; color: var(--slate-700);">Set Custom Values for v&sup0; (will be auto-normalized to sum to 1):</label>
-            <div id="customVectorInputs" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem;"></div>
           </div>
         </div>
 
@@ -182,7 +237,7 @@
         <div class="card">
           <div class="card-header">
             <div>
-              <h2 class="card-title">Stage 7 &amp; 8: Final Ranking &amp; Eigenvector Verification</h2>
+              <h2 class="card-title">Stages 7 &amp; 8: Final Ranking &amp; Verification</h2>
               <p class="card-subtitle">Steady-state probabilities and Perron-Frobenius nullspace confirmation.</p>
             </div>
             <span class="status-badge badge-success" id="eigenStatusBadge">VERIFIED MATCH</span>
@@ -212,16 +267,14 @@
 
           <!-- Mathematical Eigenvector Verification -->
           <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 8px; padding: 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-              <h3 style="font-size: 0.95rem; font-weight: 600; color: var(--slate-800);">
-                Analytical Eigenvector Verification: (G - I)v = 0 with &Sigma; v_i = 1
-              </h3>
-            </div>
-            <p style="font-size: 0.83rem; color: var(--slate-600); margin-bottom: 0.75rem;">
-              Solves the exact stationary linear system using Gaussian Elimination with partial pivoting and verifies the Perron-Frobenius Theorem for stochastic matrices.
+            <h3 style="font-size: 0.92rem; font-weight: 600; color: var(--slate-800); margin-bottom: 0.35rem;">
+              Analytical Eigenvector Verification: (G - I)v = 0 with &Sigma; v_i = 1
+            </h3>
+            <p style="font-size: 0.82rem; color: var(--slate-600); margin-bottom: 0.75rem;">
+              Solves the exact stationary linear system using Gaussian Elimination with partial pivoting and confirms the Perron-Frobenius Theorem.
             </p>
             
-            <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem; font-size: 0.85rem;">
+            <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem; font-size: 0.82rem; flex-wrap: wrap;">
               <div>Residual Norm ||Gv* - v*||&sub2;: <strong class="code-val" id="eigenResidualVal">0.00e+00</strong></div>
               <div>Difference ||v_power - v_eigen||&sub2;: <strong class="code-val" id="eigenPowerDiffVal">0.00e+00</strong></div>
             </div>
@@ -231,7 +284,7 @@
                 <thead>
                   <tr>
                     <th>Page</th>
-                    <th>Power Iteration v*</th>
+                    <th>Power Method v*</th>
                     <th>Eigenvector v_exact</th>
                     <th>Absolute Delta |&Delta;|</th>
                   </tr>
@@ -330,7 +383,6 @@
               <thead>
                 <tr id="iterationTableHeadRow">
                   <th>Iteration (k)</th>
-                  <!-- Columns generated dynamically -->
                   <th>||v^(k) - v^(k-1)||_2</th>
                   <th>L1 Norm Diff</th>
                   <th>Status</th>
@@ -380,7 +432,7 @@
     <!-- TAB 2: MATHEMATICAL CONCEPTS & FORMULATION -->
     <div id="tabMathTheory" class="tab-content">
       <div class="theory-block">
-        <h2>Mathematical Formulation &amp; Concepts</h2>
+        <h2>Mathematical Formulation &amp; Concepts (Modules 1, 2, 3)</h2>
         <p>
           This mini-project demonstrates the application of <strong>Linear Algebra &amp; Vector Calculus</strong>
           to model and analyze web page importance via the PageRank Markov process. The system executes eight sequential mathematical stages, where each stage's output serves as the input to the subsequent stage.
@@ -486,122 +538,6 @@
         <p>
           and solving via Gaussian Elimination with partial pivoting, confirming \(\|v_{\text{power}}^* - v_{\text{eigen}}^*\|_2 \approx 0\).
         </p>
-      </div>
-    </div>
-
-    <!-- TAB 3: VIVA VOCE & PRESENTATION GUIDE -->
-    <div id="tabVivaGuide" class="tab-content">
-      <div class="theory-block">
-        <h2>Viva Voce &amp; Presentation Preparation Guide</h2>
-        <p>
-          Use this curated question-and-answer guide to prepare for your project demonstration, viva evaluation, and viva voce presentation.
-        </p>
-
-        <div class="qa-card">
-          <div class="qa-question">
-            <span>Q1. What are the four prescribed mathematical concepts used in this mini-project?</span>
-            <span>Concept Alignment</span>
-          </div>
-          <div class="qa-answer">
-            <p><strong>Answer:</strong></p>
-            <ol>
-              <li><strong>Matrices:</strong> Directed link adjacency matrix \(A\), column-stochastic transition matrix \(M\), and the irreducible Google matrix \(G\).</li>
-              <li><strong>Vectors:</strong> Probability state vectors \(v^{(k)}\), uniform initial ranking vector \(v^{(0)}\), and stationary steady-state ranking vector \(v^*\).</li>
-              <li><strong>Linear Transformations:</strong> The state update equation \(v^{(k+1)} = G v^{(k)}\) is a linear operator \(T(v) = Gv\) that preserves probability mass (\(\|v\|_1 = 1\)).</li>
-              <li><strong>Eigenvalues and Eigenvectors:</strong> The steady-state ranking vector is the eigenvector associated with dominant eigenvalue \(\lambda = 1\) satisfying \(G v^* = v^*\).</li>
-              <li><strong>Markov Chains:</strong> Formulated as a discrete-time ergodic Markov chain over the finite state space of web pages.</li>
-            </ol>
-          </div>
-        </div>
-
-        <div class="qa-card">
-          <div class="qa-question">
-            <span>Q2. Why is the transition matrix M normalized by columns instead of rows?</span>
-            <span>Markov Properties</span>
-          </div>
-          <div class="qa-answer">
-            <p><strong>Answer:</strong> In the random surfer model, the state vector is a column vector \(v\) where \(v_i\) represents the probability of being on page \(i\). The probability of transitioning from page \(j\) to page \(i\) is \(M_{ij}\). To ensure conservation of probability, the sum over all possible destinations \(i\) given current page \(j\) must equal 1: \(\sum_{i=1}^n M_{ij} = 1\). Hence, every column of \(M\) must sum to 1 (column-stochastic matrix).</p>
-          </div>
-        </div>
-
-        <div class="qa-card">
-          <div class="qa-question">
-            <span>Q3. What is a "Dangling Node" and how does your software handle it?</span>
-            <span>Numerical Stability</span>
-          </div>
-          <div class="qa-answer">
-            <p><strong>Answer:</strong> A dangling node is a web page with no outgoing hyperlinks (out-degree \(d_j = 0\)). If unhandled, column \(j\) in \(M\) would contain all zeros, violating the stochastic property and causing probability mass to leak to 0 over iterations. Our software detects dangling nodes and replaces their column with uniform teleportation: \(M_{ij} = \frac{1}{n}\) for all \(i\), modeling a user opening a random bookmark or typing a new URL.</p>
-          </div>
-        </div>
-
-        <div class="qa-card">
-          <div class="qa-question">
-            <span>Q4. What is a "Spider Trap" and why is the damping factor d introduced?</span>
-            <span>Graph Anomalies</span>
-          </div>
-          <div class="qa-answer">
-            <p><strong>Answer:</strong> A spider trap is a group of pages (or a single self-looping page) with links only amongst themselves. A random surfer entering this group can never leave, absorbing all probability mass so other legitimate pages end up with rank 0. The Google damping factor \(d\) (typically \(0.85\)) introduces a teleportation term \(\frac{1-d}{n}\mathbf{E}\). With probability \(d\), the surfer follows links; with probability \((1-d)\), they jump to any random page on the web. This guarantees the Markov chain is irreducible and aperiodic.</p>
-          </div>
-        </div>
-
-        <div class="qa-card">
-          <div class="qa-question">
-            <span>Q5. Why does the dominant eigenvalue always equal 1 (\(\lambda_1 = 1\))?</span>
-            <span>Perron-Frobenius Theorem</span>
-          </div>
-          <div class="qa-answer">
-            <p><strong>Answer:</strong> Since \(G\) is column-stochastic, its transpose \(G^T\) is row-stochastic: \(G^T \mathbf{1} = \mathbf{1}\), meaning \(\mathbf{1} = [1, 1, \dots, 1]^T\) is an eigenvector of \(G^T\) with eigenvalue \(\lambda = 1\). Because a matrix and its transpose share the same eigenvalues, \(G\) must also have \(\lambda = 1\) as an eigenvalue. Furthermore, by the Perron-Frobenius theorem for strictly positive matrices, \(\lambda = 1\) is strictly dominant (\(|\lambda_i| < 1\) for all \(i \ge 2\)), unique, and its associated eigenvector has strictly positive components.</p>
-          </div>
-        </div>
-
-        <div class="qa-card">
-          <div class="qa-question">
-            <span>Q6. What role does the second eigenvalue \(\lambda_2\) play in convergence?</span>
-            <span>Spectral Gap</span>
-          </div>
-          <div class="qa-answer">
-            <p><strong>Answer:</strong> The asymptotic rate of convergence in power iteration is determined by the ratio \(\left|\frac{\lambda_2}{\lambda_1}\right| = |\lambda_2|\). The error at iteration \(k\) satisfies \(\|v^{(k)} - v^*\| = \mathcal{O}(|\lambda_2|^k)\). Since \(|\lambda_2| \le d\), choosing \(d = 0.85\) guarantees fast exponential convergence in approximately 25 to 40 iterations regardless of web size! The difference \(1 - |\lambda_2|\) is called the <em>spectral gap</em>.</p>
-          </div>
-        </div>
-
-        <div class="qa-card">
-          <div class="qa-question">
-            <span>Q7. How does the software verify the power iteration result analytically?</span>
-            <span>Software Verification</span>
-          </div>
-          <div class="qa-answer">
-            <p><strong>Answer:</strong> The software formulates the homogeneous nullspace problem \((G - I)v = 0\) subject to \(\sum_{i=1}^n v_i = 1\). By replacing one linearly dependent row of \((G - I)\) with the all-ones vector \([1, 1, \dots, 1]\) and right-hand side \([0, \dots, 0, 1]^T\), it solves the non-singular linear system using Gaussian Elimination with partial pivoting. It then computes the Euclidean distance \(\|v_{\text{power}} - v_{\text{eigen}}\|_2\) and residual \(\|G v - v\|_2\), confirming numerical equality down to \(< 10^{-7}\).</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 4: PYTHON CLI & TERMINAL DEMO -->
-    <div id="tabPythonCli" class="tab-content">
-      <div class="theory-block">
-        <h2>Python Implementation &amp; CLI Script</h2>
-        <p>
-          Alongside this web application, a complete, standalone Python implementation is provided in the repository under <code>python/pagerank_analyzer.py</code>. It requires zero external libraries (pure Python standard library) and runs anywhere.
-        </p>
-
-        <h3>How to Run the Python Script:</h3>
-        <pre class="code-box"># Run the default 4-node academic demonstration
-python3 python/pagerank_analyzer.py
-
-# Run with custom damping factor and tolerance
-python3 python/pagerank_analyzer.py --damping 0.85 --tolerance 1e-8 --preset star
-
-# Run automated mathematical verification test suite
-python3 python/demo_example.py</pre>
-
-        <h3>Features of the Python Implementation:</h3>
-        <ul>
-          <li>Builds the Adjacency Matrix \(A\), Transition Matrix \(M\), and Google Matrix \(G\).</li>
-          <li>Handles dangling nodes with uniform teleportation.</li>
-          <li>Executes Power Iteration with full iteration log and Euclidean error tracking.</li>
-          <li>Solves the stationary linear system \((G - I)v = 0\) via Gaussian Elimination.</li>
-          <li>Exports convergence history to CSV and JSON formats.</li>
-        </ul>
       </div>
     </div>
 
